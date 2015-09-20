@@ -6,20 +6,83 @@ output:
 ---
 
 
-## Loading and preprocessing the data
+## Reading The Data In
+#### After downloading the file from [https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"]
 
+#### Read in the data set.
+```{r}
+fitnessData <- read.csv("~/Coursera_R/fitbit/activity.csv") 
+```
 
+## A histogram of the total number of steps taken each day.
 
-## What is mean total number of steps taken per day?
+```{r}
+# First need to aggeragate data by day.
+dailyStepsSumByDay <- aggregate(fitnessData$steps, by=list(fitnessData$date), FUN=sum,na.rm=TRUE) 
+# Plot historgram of tiotla number of steps taken each day.
+hist(dailySteps$x)
+```
 
-
+#### Then calculate mean by day:
+```{r}
+mean(dailySteps$x,)
+```
+#### Then calculate median by day:
+```{r}
+median(dailySteps$x,)
+```
 
 ## What is the average daily activity pattern?
+####Determine the daily activity pattern by aggregating by the 5 min. interval
+```{r}
+averageStepsPerInterval <-aggregate(fitnessData$steps, by=list(fitnessData$interval), FUN=mean,na.rm=TRUE) 
+```
+#### Plot the average number of steps taken (averaged across all days) versus the 5-minute intervals.
+```{r}
+plot(averageStepsPerInterval,type="l", xlab= "5 minute Interval", ylab= "Average Steps") 
+```
 
+## Report the 5-minute interval that, on average, contains the maximum number of steps.
+```{r}
+averageStepsPerInterval[which.max(averageStepsPerInterval$x),]
+```
 
 
 ## Imputing missing values
+#### Impute the missing base NA's using the Interval average.
+#### Merge the intervalaverage data set and base data set
+```{r}
+mergedFitnessData <- merge(fitnessData,averageStepsPerInterval, by.x = "interval", by.y="Group.1",all.x=TRUE) 
+```
+#### Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r}
+imputedFitnessData <- transform(mergedFitnessData, imputedSteps = ifelse(is.na(steps), x, steps)) 
+```
+
+## A histogram of the total number of steps taken each day after missing values were imputed.
+```{r}
+#Aggergate by day
+dailyImputedStepsSumByDay <- aggregate(fitnessData$steps, by=list(imputedFitnessData$date), FUN=sum,na.rm=TRUE) 
+
+# Plot historgram of imputed steps by day
+hist(imputedFitnessData$imputedSteps)
+```
+
+## Are there differences in activity patterns between weekdays and weekends?  The grpahs below show greater activity across intervals on the weekends.
+```{r}
+# Determine Day of Week
+imputedFitnessData$dayofweek <- weekdays(as.Date(imputedFitnessData$date))
+
+# Determine Weekends
+weekendImputedDate <- transform(imputedFitnessData, dayType = ifelse(imputedFitnessData$dayofweek=="Saturday"|imputedFitnessData$dayofweek=="Sunday","Weekend","Weekday")) 
+
+averageImputedStepsPerInterval <-aggregate(imputedSteps ~ interval + dayType,data=weekendImputedDate,  FUN=mean) 
+
+#plot the average number of steps taken per 5-minute interval across weekdays and weekends
+
+library(lattice)
+head(averageImputedStepsPerInterval)
+xyplot(imputedSteps ~ interval| dayType, data=averageImputedStepsPerInterval, type="l", xlab = "5 min. interval", ylab = "steps", main = "Weekday vs Weekend steps per 5 min. Interval")
+```
 
 
-
-## Are there differences in activity patterns between weekdays and weekends?
